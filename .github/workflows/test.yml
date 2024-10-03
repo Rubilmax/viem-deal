@@ -7,6 +7,7 @@ on:
       - test/**
       - package.json
       - yarn.lock
+  workflow_call:
 
 jobs:
   jest:
