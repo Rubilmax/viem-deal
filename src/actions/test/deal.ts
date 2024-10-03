@@ -119,7 +119,7 @@ export async function deal<chain extends Chain | undefined, account extends Acco
 
       cache = JSON.parse(await readFileSync(cachePath, "utf-8"));
     } catch (error) {
-      console.debug(`No cache found: ${error}, re-initializing.`);
+      console.debug(`Could not load cache: ${error}, re-initializing.`);
 
       cache = {};
     }
