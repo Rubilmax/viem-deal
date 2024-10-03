@@ -1,0 +1,58 @@
+{
+  "name": "viem-deal",
+  "version": "1.0.0",
+  "author": {
+    "name": "Romain (Rubilmax) Milon",
+    "email": "rmilon@gmail.com",
+    "url": "https://github.com/rubilmax"
+  },
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "biome check",
+    "build": "tsc --build tsconfig.build.json",
+    "test": "dotenv -- vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rubilmax/viem-deal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Rubilmax/viem-deal/issues"
+  },
+  "keywords": [
+    "viem",
+    "deal",
+    "anvil",
+    "test",
+    "hardhat",
+    "network",
+    "rpc"
+  ],
+  "peerDependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.3",
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "@types/node": "^22.7.4",
+    "@vitest/coverage-v8": "^2.1.2",
+    "dotenv-cli": "^7.4.2",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prool": "^0.0.16",
+    "typescript": "^5.6.2",
+    "viem": "^2.21.17",
+    "vitest": "^2.1.2"
+  },
+  "lint-staged": {
+    "*.ts": "yarn biome check"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+name: Jest Test Suite
+
+on:
+  pull_request:
+    paths:
+      - src/**
+      - test/**
+      - package.json
+      - yarn.lock
+
+jobs:
+  jest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+          
+      - uses: actions/cache@v4
+        with:
+          path: ~/.foundry/cache
+          key: anvil-cache
+
+      - run: yarn --frozen-lockfile
+
+      - run: yarn test

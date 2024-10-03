@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: lts/*
+    secrets:
+      NPM_TOKEN:
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semantic-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: yarn
+
+      - run: yarn --frozen-lockfile
+
+      - run: yarn build
+
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
