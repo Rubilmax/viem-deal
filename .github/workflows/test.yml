@@ -10,7 +10,7 @@ on:
   workflow_call:
 
 jobs:
-  jest:
+  vitest:
     runs-on: ubuntu-latest
 
     steps:

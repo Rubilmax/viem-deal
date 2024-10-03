@@ -31,6 +31,7 @@ export const test = vitest.extend<{
     const instance = await anvil({
       forkUrl: rpcUrl,
       forkBlockNumber: 20_884_340,
+      timeout: 3_000,
     }).create({
       port: port++,
     });
