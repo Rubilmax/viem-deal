@@ -2,10 +2,6 @@ name: Release
 
 on:
   workflow_call:
-    inputs:
-      node-version:
-        type: string
-        default: lts/*
     secrets:
       NPM_TOKEN:
         required: true
@@ -23,7 +19,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ inputs.node-version }}
+          node-version: 22
           cache: yarn
 
       - run: yarn --frozen-lockfile
