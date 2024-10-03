@@ -119,7 +119,7 @@ export async function deal<chain extends Chain | undefined, account extends Acco
     try {
       cache = JSON.parse(await readFileSync(cachePath, "utf-8"));
     } catch (error) {
-      console.debug(`Error reading viem-deal cache: ${error}, re-initializing.`);
+      console.debug(`No cache found: ${error}, re-initializing.`);
 
       cache = {};
     }
