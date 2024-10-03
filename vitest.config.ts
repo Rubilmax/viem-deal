@@ -10,7 +10,7 @@ export default defineConfig({
       exclude: ["test"],
     },
     sequence: {
-      concurrent: !!process.env.CI,
+      concurrent: !process.env.CI,
     },
     testTimeout: 30_000,
   },
