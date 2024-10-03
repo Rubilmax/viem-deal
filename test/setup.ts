@@ -36,6 +36,8 @@ export const test = vitest.extend<{
       port: port++,
     });
 
+    instance.on("message", console.log);
+
     const stop = await instance.start();
 
     await use(
