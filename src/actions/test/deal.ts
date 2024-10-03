@@ -114,9 +114,9 @@ export async function deal<chain extends Chain | undefined, account extends Acco
   };
 
   if (cachePath != null && cache == null) {
-    const { readFileSync } = await import("node:fs");
-
     try {
+      const { readFileSync } = await import("node:fs");
+
       cache = JSON.parse(await readFileSync(cachePath, "utf-8"));
     } catch (error) {
       console.debug(`No cache found: ${error}, re-initializing.`);
@@ -126,7 +126,6 @@ export async function deal<chain extends Chain | undefined, account extends Acco
 
     const cached = cache![erc20];
     if (cached != null && (await trySlot(cached))) return;
-    console.log(cached);
   }
 
   const switchStorageType = storageType == null;
@@ -153,11 +152,15 @@ export async function deal<chain extends Chain | undefined, account extends Acco
   if (cache != null && cachePath != null) {
     cache[erc20] = { type: storageType, slot };
 
-    const { dirname } = await import("node:path");
-    const { mkdirSync, writeFileSync } = await import("node:fs");
+    try {
+      const { dirname } = await import("node:path");
+      const { mkdirSync, writeFileSync } = await import("node:fs");
 
-    await mkdirSync(dirname(cachePath), { recursive: true });
+      await mkdirSync(dirname(cachePath), { recursive: true });
 
-    await writeFileSync(cachePath, JSON.stringify(cache));
+      await writeFileSync(cachePath, JSON.stringify(cache));
+    } catch (error) {
+      console.error(`Could not save cache: ${error}`);
+    }
   }
 }
