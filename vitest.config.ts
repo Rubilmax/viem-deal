@@ -1,7 +1,5 @@
 import { defineConfig } from "vitest/config";
 
-console.log(process.env.CI);
-
 export default defineConfig({
   test: {
     coverage: {
@@ -10,7 +8,7 @@ export default defineConfig({
       exclude: ["test"],
     },
     sequence: {
-      concurrent: !process.env.CI,
+      concurrent: true,
     },
     testTimeout: 30_000,
   },
