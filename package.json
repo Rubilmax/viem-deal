@@ -8,6 +8,10 @@
   },
   "license": "MIT",
   "type": "module",
+  "main": "lib/index.js",
+  "files": [
+    "lib/*"
+  ],
   "scripts": {
     "prepare": "husky",
     "lint": "biome check",
@@ -24,15 +28,15 @@
   "keywords": [
     "viem",
     "deal",
+    "hardhat",
     "anvil",
     "test",
-    "hardhat",
-    "network",
+    "cheat",
     "rpc",
     "erc20"
   ],
   "peerDependencies": {
-    "viem": "^2.21.0"
+    "viem": "^2.21.18"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.3",
