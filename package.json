@@ -9,9 +9,16 @@
   "license": "MIT",
   "type": "module",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
     "lib/*"
   ],
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
   "scripts": {
     "prepare": "husky",
     "lint": "biome check",

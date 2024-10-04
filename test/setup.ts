@@ -1,5 +1,5 @@
 import { anvil } from "prool/instances";
-import type { Client, HttpTransport, PublicActions, TestActions, TestClient, TestRpcSchema, WalletActions } from "viem";
+import type { Client, HttpTransport, PublicActions, TestActions, TestRpcSchema, WalletActions } from "viem";
 import { http, createTestClient, publicActions, walletActions } from "viem";
 import { mainnet } from "viem/chains";
 import { test as vitest } from "vitest";
@@ -21,9 +21,9 @@ export const test = vitest.extend<{
     TestAccount,
     TestRpcSchema<"anvil">,
     TestActions &
+      DealActions &
       PublicActions<HttpTransport, typeof mainnet, TestAccount> &
-      WalletActions<typeof mainnet, TestAccount> &
-      DealActions
+      WalletActions<typeof mainnet, TestAccount>
   >;
 }>({
   // biome-ignore lint/correctness/noEmptyPattern: <explanation>
