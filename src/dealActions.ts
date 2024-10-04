@@ -1,5 +1,5 @@
 import type { TestClientMode } from "node_modules/viem/_types/clients/createTestClient.js";
-import type { Account, Chain, Client, TestClient, TestRpcSchema, Transport } from "viem";
+import type { Account, Chain, TestClient, Transport } from "viem";
 import { type DealParameters, deal } from "./actions/test/deal.js";
 
 export type DealActions = {
@@ -32,8 +32,8 @@ export type DealActions = {
 export function dealActions<
   chain extends Chain | undefined = Chain | undefined,
   account extends Account | undefined = Account | undefined,
->(client: Client<Transport, chain, account, TestRpcSchema<TestClientMode>>): DealActions {
+>(client: TestClient<TestClientMode, Transport, chain, account, false>): DealActions {
   return {
-    deal: (args) => deal(client as unknown as TestClient, args),
+    deal: (args) => deal(client, args),
   };
 }
