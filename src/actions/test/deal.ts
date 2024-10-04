@@ -31,6 +31,16 @@ if (typeof process !== "undefined") {
   const { join } = await import("node:path");
 
   cachePath = join(homedir(), ".foundry", "cache", "viem-deal");
+
+  try {
+    const { readFileSync } = await import("node:fs");
+
+    cache = JSON.parse(await readFileSync(cachePath, "utf-8"));
+  } catch (error) {
+    console.debug(`Could not load cache: ${error}, re-initializing.`);
+
+    cache = {};
+  }
 }
 
 export type StorageLayoutType = "solidity" | "vyper";
@@ -114,20 +124,8 @@ export async function deal<chain extends Chain | undefined, account extends Acco
     return false;
   };
 
-  if (cachePath != null && cache == null) {
-    try {
-      const { readFileSync } = await import("node:fs");
-
-      cache = JSON.parse(await readFileSync(cachePath, "utf-8"));
-    } catch (error) {
-      console.debug(`Could not load cache: ${error}, re-initializing.`);
-
-      cache = {};
-    }
-
-    const cached = cache![erc20];
-    if (cached != null && (await trySlot(cached))) return;
-  }
+  const cached = cache?.[erc20];
+  if (cached != null && (await trySlot(cached))) return;
 
   const switchStorageType = storageType == null;
 
