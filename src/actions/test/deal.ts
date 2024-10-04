@@ -27,9 +27,10 @@ let cache:
 let cachePath: string | undefined;
 
 if (typeof process !== "undefined") {
+  const { homedir } = await import("node:os");
   const { join } = await import("node:path");
 
-  cachePath = join("cache", "viem-deal.json");
+  cachePath = join(homedir(), ".foundry", "cache", "viem-deal");
 }
 
 export type StorageLayoutType = "solidity" | "vyper";
