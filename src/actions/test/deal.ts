@@ -30,7 +30,7 @@ if (typeof process !== "undefined") {
   const { homedir } = await import("node:os");
   const { join } = await import("node:path");
 
-  cachePath = join(homedir(), ".foundry", "cache", "viem-deal");
+  cachePath = join(homedir(), ".foundry", "cache", "deal");
 
   try {
     const { readFileSync } = await import("node:fs");
