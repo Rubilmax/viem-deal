@@ -7,7 +7,7 @@
 [![Commitizen Friendly][commitizen-img]][commitizen-url]
 [![Semantic Release][semantic-release-img]][semantic-release-url]
 
-Easily [deal](https://book.getfoundry.sh/cheatcodes/deal) arbitrary amounts of any ERC20 tokens to any account on any `setStorageAt`-compatible network, including in hardhat or anvil-based forks!
+Easily [deal](https://book.getfoundry.sh/cheatcodes/deal) arbitrary amounts of any ERC20 tokens to any account on any `setStorageAt`-compatible network, including in hardhat, tevm, or anvil-based forks!
 
 > NB: `deal` is the name of a cheat code introduced by foundry, which "mints" without actually minting ERC20 tokens - it's overriding the storage of the balance of the given recipient
 
