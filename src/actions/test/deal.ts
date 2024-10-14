@@ -1,49 +1,36 @@
 import type { TestClientMode } from "node_modules/viem/_types/clients/createTestClient.js";
 import {
+  type AccessList,
   type Account,
   type Address,
+  type BlockNumber,
+  type BlockTag,
   type Chain,
+  type ExactPartial,
   type GetStorageAtErrorType,
+  type Hash,
+  type Quantity,
   type ReadContractErrorType,
   type SetStorageAtErrorType,
   type TestClient,
+  type TransactionRequest,
   type Transport,
-  encodeAbiParameters,
+  encodeFunctionData,
   erc20Abi,
-  keccak256,
   numberToHex,
 } from "viem";
 import { getStorageAt, readContract, setStorageAt } from "viem/actions";
 
-let cache:
-  | Record<
-      Address,
-      {
-        type: StorageLayoutType;
-        slot: number;
-      }
-    >
-  | undefined;
-let cachePath: string | undefined;
-
-if (typeof process !== "undefined") {
-  const { homedir } = await import("node:os");
-  const { join } = await import("node:path");
-
-  cachePath = join(homedir(), ".foundry", "cache", "deal");
-
-  try {
-    const { readFileSync } = await import("node:fs");
-
-    cache = JSON.parse(await readFileSync(cachePath, "utf-8"));
-  } catch (error) {
-    console.debug(`Could not load cache: ${error}, re-initializing.`);
-
-    cache = {};
-  }
-}
-
-export type StorageLayoutType = "solidity" | "vyper";
+export type CreateAccessListRpcSchema = {
+  Method: "eth_createAccessList";
+  Parameters:
+    | [transaction: ExactPartial<TransactionRequest>]
+    | [transaction: ExactPartial<TransactionRequest>, block: BlockNumber | BlockTag | Hash];
+  ReturnType: {
+    accessList: AccessList;
+    gasUsed: Quantity;
+  };
+};
 
 export type DealParameters = {
   /* The address of the ERC20 token to deal. */
@@ -52,22 +39,9 @@ export type DealParameters = {
   recipient: Address;
   /* The amount of tokens to deal. */
   amount: bigint;
-  /* The storage slot of the `balanceOf` mapping, if known. */
-  slot?: number;
-  /* The type of storage layout used by the ERC20 token. */
-  storageType?: StorageLayoutType;
-  /* The maximum storage slot to brute-forcefully look for a `balanceOf` mapping. */
-  maxSlot?: number;
 };
 
 export type DealErrorType = GetStorageAtErrorType | SetStorageAtErrorType | ReadContractErrorType;
-
-export function getBalanceOfSlot(type: StorageLayoutType, slot: bigint, recipient: Address) {
-  if (type === "vyper")
-    return keccak256(encodeAbiParameters([{ type: "uint256" }, { type: "address" }], [slot, recipient]));
-
-  return keccak256(encodeAbiParameters([{ type: "address" }, { type: "uint256" }], [recipient, slot]));
-}
 
 /**
  * Deals ERC20 tokens to a recipient, by overriding the storage of `balanceOf(recipient)`.
@@ -95,71 +69,65 @@ export function getBalanceOfSlot(type: StorageLayoutType, slot: bigint, recipien
  */
 export async function deal<chain extends Chain | undefined, account extends Account | undefined>(
   client: TestClient<TestClientMode, Transport, chain, account, false>,
-  { erc20, recipient, amount, slot, storageType, maxSlot = 256 }: DealParameters,
+  { erc20, recipient, amount }: DealParameters,
 ) {
-  const trySlot = async ({
-    type,
-    slot,
-  }: {
-    type: StorageLayoutType;
-    slot: number;
-  }) => {
-    const balanceOfSlot = getBalanceOfSlot(type, BigInt(slot), recipient);
-    const storageBefore = await getStorageAt(client, { address: erc20, slot: balanceOfSlot });
+  const value = numberToHex(amount, { size: 32 });
 
-    await setStorageAt(client, { address: erc20, index: balanceOfSlot, value: numberToHex(amount, { size: 32 }) });
+  const { accessList } = await client.request<CreateAccessListRpcSchema>({
+    method: "eth_createAccessList",
+    params: [
+      {
+        to: erc20,
+        data: encodeFunctionData({
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [recipient],
+        }),
+      },
+    ],
+  });
 
-    const balance = await readContract(client, {
-      abi: erc20Abi,
-      address: erc20,
-      functionName: "balanceOf",
-      args: [recipient],
-    });
+  for (const { address: address_, storageKeys } of reverse(accessList)) {
+    // Address needs to be lower-case to work with setStorageAt.
+    const address = address_.toLowerCase() as Address;
 
-    if (balance === amount) return true;
+    for (const slot of reverse(storageKeys)) {
+      const storageBefore = await getStorageAt(client, { address, slot });
 
-    if (storageBefore != null)
-      await setStorageAt(client, { address: erc20, index: balanceOfSlot, value: storageBefore });
+      await setStorageAt(client, { address, index: slot, value });
 
-    return false;
-  };
+      try {
+        const balance = await readContract(client, {
+          abi: erc20Abi,
+          address: erc20,
+          functionName: "balanceOf",
+          args: [recipient],
+        });
 
-  const cached = cache?.[erc20];
-  if (cached != null && (await trySlot(cached))) return;
+        if (balance === amount) return;
+      } catch {}
 
-  const switchStorageType = storageType == null;
-
-  slot ??= 0;
-  storageType ??= "solidity";
-
-  let success = await trySlot({ type: storageType, slot });
-
-  while (!success && slot <= maxSlot) {
-    if (switchStorageType) {
-      if (storageType === "solidity") storageType = "vyper";
-      else {
-        ++slot;
-        storageType = "solidity";
-      }
-    } else ++slot;
-
-    success = await trySlot({ type: storageType, slot });
-  }
-
-  if (!success) throw Error(`Could not deal ERC20 tokens: cannot brute-force "balanceOf" storage slot at "${erc20}"`);
-
-  if (cache != null && cachePath != null) {
-    cache[erc20] = { type: storageType, slot };
-
-    try {
-      const { dirname } = await import("node:path");
-      const { mkdirSync, writeFileSync } = await import("node:fs");
-
-      await mkdirSync(dirname(cachePath), { recursive: true });
-
-      await writeFileSync(cachePath, JSON.stringify(cache));
-    } catch (error) {
-      console.error(`Could not save cache: ${error}`);
+      if (storageBefore != null) await setStorageAt(client, { address, index: slot, value: storageBefore });
     }
   }
+
+  throw Error(`Could not deal ERC20 tokens: cannot find valid "balanceOf" storage slot for "${erc20}"`);
 }
+
+const reverse = <T>(arr: readonly T[]) => {
+  let index = arr.length;
+
+  return {
+    next() {
+      index--;
+
+      return {
+        done: index < 0,
+        value: arr[index]!,
+      };
+    },
+    [Symbol.iterator]() {
+      return this;
+    },
+  };
+};

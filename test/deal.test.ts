@@ -7,6 +7,8 @@ const aave = "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9";
 const crv = "0xd533a949740bb3306d119cc777fa900ba034cd52";
 const cbEth = "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704";
 const maDai = "0x36F8d0D0573ae92326827C4a82Fe4CE4C244cAb6";
+const usd0 = "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0";
+const stEth = "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84";
 
 describe("deal", () => {
   test("should deal USDC", async ({ client }) => {
@@ -109,7 +111,6 @@ describe("deal", () => {
       erc20: cbEth,
       recipient: client.account.address,
       amount: expected,
-      storageType: "solidity",
     });
 
     const balance = await client.readContract({
@@ -150,16 +151,41 @@ describe("deal", () => {
     expect(balance).toEqual(expected);
   });
 
-  test("should not deal USD0", async ({ client }) => {
-    await expect(
+  test("should deal USD0", async ({ client }) => {
+    const expected = parseUnits("1000", 18);
+
+    expect(
+      await client.readContract({
+        abi: erc20Abi,
+        address: usd0,
+        functionName: "balanceOf",
+        args: [client.account.address],
+      }),
+    ).not.toEqual(expected);
+
+    await client.deal({
+      erc20: usd0,
+      recipient: client.account.address,
+      amount: expected,
+    });
+
+    const balance = await client.readContract({
+      abi: erc20Abi,
+      address: usd0,
+      functionName: "balanceOf",
+      args: [client.account.address],
+    });
+
+    expect(balance).toEqual(expected);
+  });
+
+  test("should not deal stETH", async ({ client }) => {
+    expect(
       client.deal({
-        erc20: "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0",
+        erc20: stEth,
         recipient: client.account.address,
         amount: 1n,
-        maxSlot: 10,
       }),
-    ).rejects.toThrow(
-      `Could not deal ERC20 tokens: cannot brute-force "balanceOf" storage slot at "0x35D8949372D46B7a3D5A56006AE77B215fc69bC0"`,
-    );
+    ).rejects.toBe(`Could not deal ERC20 tokens: cannot find valid "balanceOf" storage slot for "${stEth}"`);
   });
 });

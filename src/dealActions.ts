@@ -6,9 +6,7 @@ export type DealActions = {
   /**
    * Deals ERC20 tokens to a recipient, by overriding the storage of `balanceOf(recipient)`.
    *
-   * - Docs: https://viem.sh/docs/actions/test/deal
-   *
-   * @param args - {@link DropTransactionParameters}
+   * @param args - {@link DealParameters}
    *
    * @example
    * import { createTestClient, http } from 'viem'
