@@ -2,7 +2,7 @@ import type { TestClientMode } from "node_modules/viem/_types/clients/createTest
 import type { Account, Chain, TestClient, Transport } from "viem";
 import { type DealParameters, deal } from "./actions/test/deal.js";
 
-export type DealActions = {
+export type DealActions<account extends Account | undefined = Account | undefined> = {
   /**
    * Deals ERC20 tokens to a recipient, by overriding the storage of `balanceOf(recipient)`.
    *
@@ -24,13 +24,13 @@ export type DealActions = {
    *   amount: parseUnits("100", 6),
    * })
    */
-  deal: (args: DealParameters) => Promise<void>;
+  deal: (args: DealParameters<account>) => Promise<void>;
 };
 
 export function dealActions<
   chain extends Chain | undefined = Chain | undefined,
   account extends Account | undefined = Account | undefined,
->(client: TestClient<TestClientMode, Transport, chain, account, false>): DealActions {
+>(client: TestClient<TestClientMode, Transport, chain, account, false>): DealActions<account> {
   return {
     deal: (args) => deal(client, args),
   };

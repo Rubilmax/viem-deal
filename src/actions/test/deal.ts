@@ -9,6 +9,7 @@ import {
   type ExactPartial,
   type GetStorageAtErrorType,
   type Hash,
+  type PartialBy,
   type Quantity,
   type ReadContractErrorType,
   type SetStorageAtErrorType,
@@ -19,7 +20,8 @@ import {
   erc20Abi,
   numberToHex,
 } from "viem";
-import { getStorageAt, readContract, setStorageAt } from "viem/actions";
+import { parseAccount } from "viem/accounts";
+import { getStorageAt, readContract, setBalance, setStorageAt } from "viem/actions";
 
 export type CreateAccessListRpcSchema = {
   Method: "eth_createAccessList";
@@ -32,19 +34,23 @@ export type CreateAccessListRpcSchema = {
   };
 };
 
-export type DealParameters = {
+export type RawDealParameters = {
   /* The address of the ERC20 token to deal. */
-  erc20: Address;
-  /* The address of the recipient of the dealt tokens. */
-  recipient: Address;
+  erc20?: Address;
+  /* The owner of the dealt tokens. */
+  account: Account | Address;
   /* The amount of tokens to deal. */
   amount: bigint;
 };
 
+export type DealParameters<account extends Account | undefined = Account | undefined> = account extends Account
+  ? PartialBy<RawDealParameters, "account">
+  : RawDealParameters;
+
 export type DealErrorType = GetStorageAtErrorType | SetStorageAtErrorType | ReadContractErrorType;
 
 /**
- * Deals ERC20 tokens to a recipient, by overriding the storage of `balanceOf(recipient)`.
+ * Deals ERC20 tokens to an account, by overriding the storage of `balanceOf(account)`.
  *
  * - Docs: https://viem.sh/docs/actions/test/deal
  *
@@ -63,14 +69,19 @@ export type DealErrorType = GetStorageAtErrorType | SetStorageAtErrorType | Read
  * })
  * await deal(client, {
  *   erc20: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
- *   recipient: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+ *   account: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
  *   amount: parseUnits("100", 6),
  * })
  */
 export async function deal<chain extends Chain | undefined, account extends Account | undefined>(
   client: TestClient<TestClientMode, Transport, chain, account, false>,
-  { erc20, recipient, amount }: DealParameters,
+  { erc20, account: account_ = client.account!, amount }: DealParameters<account>,
 ) {
+  const account = parseAccount(account_);
+
+  if (erc20 == null || erc20 === "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE")
+    return setBalance(client, { address: account.address, value: amount });
+
   const value = numberToHex(amount, { size: 32 });
 
   const { accessList } = await client.request<CreateAccessListRpcSchema>({
@@ -81,7 +92,7 @@ export async function deal<chain extends Chain | undefined, account extends Acco
         data: encodeFunctionData({
           abi: erc20Abi,
           functionName: "balanceOf",
-          args: [recipient],
+          args: [account.address],
         }),
       },
     ],
@@ -101,7 +112,7 @@ export async function deal<chain extends Chain | undefined, account extends Acco
           abi: erc20Abi,
           address: erc20,
           functionName: "balanceOf",
-          args: [recipient],
+          args: [account.address],
         });
 
         if (balance === amount) return;

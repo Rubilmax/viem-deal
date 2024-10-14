@@ -1,50 +1,56 @@
-import { anvil } from "prool/instances";
-import type { Client, HttpTransport, PublicActions, TestActions, TestRpcSchema, WalletActions } from "viem";
+import type { Client, HDAccount, HttpTransport, PublicActions, TestActions, TestRpcSchema, WalletActions } from "viem";
 import { http, createTestClient, publicActions, walletActions } from "viem";
 import { mainnet } from "viem/chains";
 import { test as vitest } from "vitest";
 import { type DealActions, dealActions } from "../src/index.js";
+import { spawnAnvil } from "./anvil.js";
+import { testAccount } from "./fixtures.js";
 
-export interface TestAccount {
-  address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
-  type: "json-rpc";
+// Vitest needs to serialize BigInts to JSON, so we need to add a toJSON method to BigInt.prototype.
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt#use_within_json
+// @ts-ignore
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
+declare global {
+  namespace NodeJS {
+    interface Process {
+      __tinypool_state__: {
+        isChildProcess: boolean;
+        isTinypoolWorker: boolean;
+        workerData: null;
+        workerId: number;
+      };
+    }
+  }
 }
-
-const rpcUrl = process.env.MAINNET_RPC_URL || mainnet.rpcUrls.default.http[0];
-
-let port = 8545;
 
 export const test = vitest.extend<{
   client: Client<
     HttpTransport,
     typeof mainnet,
-    TestAccount,
+    HDAccount,
     TestRpcSchema<"anvil">,
     TestActions &
-      DealActions &
-      PublicActions<HttpTransport, typeof mainnet, TestAccount> &
-      WalletActions<typeof mainnet, TestAccount>
+      DealActions<HDAccount> &
+      PublicActions<HttpTransport, typeof mainnet, HDAccount> &
+      WalletActions<typeof mainnet, HDAccount>
   >;
 }>({
-  // biome-ignore lint/correctness/noEmptyPattern: <explanation>
+  // biome-ignore lint/correctness/noEmptyPattern: required by vitest at runtime
   client: async ({}, use) => {
-    const instance = await anvil({
-      forkUrl: rpcUrl,
+    const { rpcUrl, stop } = await spawnAnvil({
+      forkUrl: process.env.MAINNET_RPC_URL || mainnet.rpcUrls.default.http[0],
       forkBlockNumber: 20_884_340,
-    }).create({
-      port: port++,
     });
-
-    instance.on("stderr", console.warn);
-
-    const stop = await instance.start();
 
     await use(
       createTestClient({
         chain: mainnet,
         mode: "anvil",
-        transport: http(`http://${instance.host}:${instance.port}`),
-        account: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+        account: testAccount(),
+        transport: http(rpcUrl),
       })
         .extend(dealActions)
         .extend(publicActions)

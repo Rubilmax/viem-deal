@@ -1,5 +1,7 @@
-import { erc20Abi, parseUnits } from "viem";
+import { http, createTestClient, erc20Abi, parseUnits } from "viem";
 import { describe, expect } from "vitest";
+import { dealActions } from "../src/dealActions.js";
+import { testAccount } from "./fixtures.js";
 import { test } from "./setup.js";
 
 const usdc = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
@@ -25,7 +27,6 @@ describe("deal", () => {
 
     await client.deal({
       erc20: usdc,
-      recipient: client.account.address,
       amount: expected,
     });
 
@@ -39,21 +40,56 @@ describe("deal", () => {
     expect(balance).toEqual(expected);
   });
 
+  test("should deal USDC without account", async ({ client }) => {
+    const expected = parseUnits("100", 6);
+
+    expect(
+      await client.readContract({
+        abi: erc20Abi,
+        address: usdc,
+        functionName: "balanceOf",
+        args: [client.account.address],
+      }),
+    ).not.toEqual(expected);
+
+    await createTestClient({
+      mode: "anvil",
+      chain: client.chain,
+      transport: http(client.transport.url, client.transport),
+    })
+      .extend(dealActions)
+      .deal({
+        erc20: usdc,
+        account: client.account,
+        amount: expected,
+      });
+
+    const balance = await client.readContract({
+      abi: erc20Abi,
+      address: usdc,
+      functionName: "balanceOf",
+      args: [client.account.address],
+    });
+
+    expect(balance).toEqual(expected);
+  });
+
   test("should deal AAVE", async ({ client }) => {
     const expected = parseUnits("100", 18);
+    const account = testAccount(1);
 
     expect(
       await client.readContract({
         abi: erc20Abi,
         address: aave,
         functionName: "balanceOf",
-        args: [client.account.address],
+        args: [account.address],
       }),
     ).not.toEqual(expected);
 
     await client.deal({
       erc20: aave,
-      recipient: client.account.address,
+      account,
       amount: expected,
     });
 
@@ -61,7 +97,7 @@ describe("deal", () => {
       abi: erc20Abi,
       address: aave,
       functionName: "balanceOf",
-      args: [client.account.address],
+      args: [account.address],
     });
 
     expect(balance).toEqual(expected);
@@ -81,7 +117,7 @@ describe("deal", () => {
 
     await client.deal({
       erc20: crv,
-      recipient: client.account.address,
+      account: client.account.address,
       amount: expected,
     });
 
@@ -109,7 +145,7 @@ describe("deal", () => {
 
     await client.deal({
       erc20: cbEth,
-      recipient: client.account.address,
+      account: client.account.address,
       amount: expected,
     });
 
@@ -137,7 +173,7 @@ describe("deal", () => {
 
     await client.deal({
       erc20: maDai,
-      recipient: client.account.address,
+      account: client.account.address,
       amount: expected,
     });
 
@@ -165,7 +201,7 @@ describe("deal", () => {
 
     await client.deal({
       erc20: usd0,
-      recipient: client.account.address,
+      account: client.account.address,
       amount: expected,
     });
 
@@ -183,7 +219,7 @@ describe("deal", () => {
     expect(
       client.deal({
         erc20: stEth,
-        recipient: client.account.address,
+        account: client.account.address,
         amount: 1n,
       }),
     ).rejects.toBe(`Could not deal ERC20 tokens: cannot find valid "balanceOf" storage slot for "${stEth}"`);

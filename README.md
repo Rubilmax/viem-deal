@@ -11,9 +11,7 @@ Easily [deal](https://book.getfoundry.sh/cheatcodes/deal) arbitrary amounts of a
 
 > NB: `deal` is the name of a cheat code introduced by foundry, which "mints" without actually minting ERC20 tokens - it's overriding the storage of the balance of the given recipient
 
-The storage slot of the mapping `balanceOf` is brute-forced and the given user's balance is manipulated via `setStorageAt`.
-
-Storage slots are cached at `cache/viem-deal.json` to avoid brute-forcing slots every time.
+The storage slot of the mapping `balanceOf` is retrieved via `eth_createAccessList` and the given user's balance is manipulated via `setStorageAt`.
 
 ## Installation
 
