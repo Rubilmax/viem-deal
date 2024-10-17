@@ -13,6 +13,9 @@ Easily [deal](https://book.getfoundry.sh/cheatcodes/deal) arbitrary amounts of a
 
 The storage slot of the mapping `balanceOf` is retrieved via `eth_createAccessList` and the given user's balance is manipulated via `setStorageAt`.
 
+> [!WARNING]  
+> The package is known to have unexpected side effects when used to deal dust of stETH... Be careful!
+
 ## Installation
 
 ```bash

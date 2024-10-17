@@ -19,9 +19,10 @@ import {
   encodeFunctionData,
   erc20Abi,
   numberToHex,
+  parseAbi,
 } from "viem";
 import { parseAccount } from "viem/accounts";
-import { getStorageAt, readContract, setBalance, setStorageAt } from "viem/actions";
+import { readContract, setBalance, setStorageAt } from "viem/actions";
 
 export type CreateAccessListRpcSchema = {
   Method: "eth_createAccessList";
@@ -98,47 +99,34 @@ export async function deal<chain extends Chain | undefined, account extends Acco
     ],
   });
 
-  for (const { address: address_, storageKeys } of reverse(accessList)) {
+  for (const { address: address_, storageKeys } of accessList) {
     // Address needs to be lower-case to work with setStorageAt.
     const address = address_.toLowerCase() as Address;
 
-    for (const slot of reverse(storageKeys)) {
-      const storageBefore = await getStorageAt(client, { address, slot });
-
-      await setStorageAt(client, { address, index: slot, value });
-
+    for (const slot of storageKeys) {
       try {
         const balance = await readContract(client, {
           abi: erc20Abi,
           address: erc20,
           functionName: "balanceOf",
           args: [account.address],
+          stateOverride: [
+            {
+              address,
+              stateDiff: [
+                {
+                  slot,
+                  value,
+                },
+              ],
+            },
+          ],
         });
 
-        if (balance === amount) return;
+        if (balance === amount) return await setStorageAt(client, { address, index: slot, value });
       } catch {}
-
-      if (storageBefore != null) await setStorageAt(client, { address, index: slot, value: storageBefore });
     }
   }
 
   throw Error(`Could not deal ERC20 tokens: cannot find valid "balanceOf" storage slot for "${erc20}"`);
 }
-
-const reverse = <T>(arr: readonly T[]) => {
-  let index = arr.length;
-
-  return {
-    next() {
-      index--;
-
-      return {
-        done: index < 0,
-        value: arr[index]!,
-      };
-    },
-    [Symbol.iterator]() {
-      return this;
-    },
-  };
-};
