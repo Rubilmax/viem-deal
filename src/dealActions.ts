@@ -1,6 +1,6 @@
-import type { TestClientMode } from "node_modules/viem/_types/clients/createTestClient.js";
+import type { TestClientMode } from "node_modules/viem/_types/clients/createTestClient";
 import type { Account, Chain, TestClient, Transport } from "viem";
-import { type DealParameters, deal } from "./actions/test/deal.js";
+import { type DealParameters, deal } from "./actions/deal";
 
 export type DealActions<account extends Account | undefined = Account | undefined> = {
   /**

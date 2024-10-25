@@ -1,4 +1,4 @@
-import type { TestClientMode } from "node_modules/viem/_types/clients/createTestClient.js";
+import type { TestClientMode } from "node_modules/viem/_types/clients/createTestClient";
 import {
   type AccessList,
   type Account,

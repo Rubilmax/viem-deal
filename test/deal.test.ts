@@ -1,8 +1,8 @@
 import { http, createTestClient, erc20Abi, parseEther, parseUnits } from "viem";
 import { describe, expect } from "vitest";
-import { dealActions } from "../src/dealActions.js";
-import { testAccount } from "./fixtures.js";
-import { test } from "./setup.js";
+import { dealActions } from "../src/dealActions";
+import { testAccount } from "./fixtures";
+import { test } from "./setup";
 
 const usdc = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
 const aave = "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9";
